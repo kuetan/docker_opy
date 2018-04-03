@@ -2,10 +2,13 @@
 
 import argparse
 import docker
+import sys
 
 parser = argparse.ArgumentParser(description='help operation docker command..')
 parser.add_argument('-p', action='store_true',
                     help='List containers')
+parser.add_argument('-e', nargs='+',
+                    help='exec [container] [command]')
 parser.add_argument('-i', action='store_true',
                     help='List images')
 parser.add_argument('-r', metavar='container', nargs='+',
@@ -38,6 +41,19 @@ class Docker():
         ilist = self.client.images.list(all=self.allflag)
         return ilist
 
+    def exec_run(self,exec_opt):
+        """
+        exec_opt[0]:container_name
+        exec_opt[1]:cmd
+        """
+        try:
+            container = self.client.containers.get(exec_opt[0])
+        except:
+            print("==no container==\n{}".format(exec_opt[0]))
+            sys.exit()
+        result = container.exec_run(exec_opt[1],environment=['TERM=xterm'])
+        return result[1]
+
 if __name__ == "__main__":
     docker = Docker(args.a, args.f)
     if args.p:
@@ -50,3 +66,5 @@ if __name__ == "__main__":
             print(image.tags[0])
     if args.r:
         docker.rm(args.r)
+    if args.e:
+        print(docker.exec_run(args.e).decode(encoding='utf-8'))
